@@ -24,6 +24,11 @@ Author:
 
 var (
 	isGlobal = flag.Bool("global", false, "Set user as global")
+
+	// these are set in build step
+	version = "unversioned"
+	commit  = "?"
+	date    = "?"
 )
 
 func main() {
