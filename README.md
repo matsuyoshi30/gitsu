@@ -31,3 +31,6 @@ Flags:
   --global              Set user as global.
 ```
 
+## LICENSE
+
+[MIT](LICENSE)
