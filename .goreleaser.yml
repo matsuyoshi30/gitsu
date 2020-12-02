@@ -21,3 +21,15 @@ archives:
 
 release:
   prerelease: auto
+
+brews:
+  - github:
+      owner: matsuyoshi30
+      name: homebrew-gitsu
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@carlosbecker.com
+    homepage: 'https://github.com/matsuyoshi30/gitsu'
+    description: 'Switch git user easily'
+    install: |
+      bin.install "git-su"
