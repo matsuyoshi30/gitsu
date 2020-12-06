@@ -18,6 +18,9 @@ archives:
       linux: linux
       windows: windows
       amd64: x86_64
+    files:
+      - LICENSE
+      - CREDITS
 
 release:
   prerelease: auto
