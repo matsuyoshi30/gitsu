@@ -21,7 +21,12 @@ func UsersToString(users []User) []string {
 }
 
 func ListUser() ([]User, error) {
-	if !IsExist(ConfigPath()) {
+	configPath, err := ConfigPath()
+	if err != nil {
+		return nil, err
+	}
+
+	if !IsExist(configPath) {
 		return nil, errors.New("No user")
 	}
 
@@ -34,7 +39,12 @@ func ListUser() ([]User, error) {
 }
 
 func CreateUser(name, email string) error {
-	if !IsExist(ConfigPath()) {
+	configPath, err := ConfigPath()
+	if err != nil {
+		return err
+	}
+
+	if !IsExist(configPath) {
 		if err := CreateConfig(Config{Users: []User{User{Name: name, Email: email}}}); err != nil {
 			return err
 		}

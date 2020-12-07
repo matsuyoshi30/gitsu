@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 type Config struct {
@@ -14,24 +13,22 @@ type Config struct {
 
 const ConfigFile = "config.json"
 
-func ConfigDir() string {
-	configDirName := "gitsu-go"
-
-	switch runtime.GOOS {
-	case "darwin":
-		return filepath.Join(os.Getenv("HOME"), "/Library/Preferences", configDirName)
-	case "windows":
-		return filepath.Join(os.Getenv("APPDATA"), "gitsu-go")
-	default:
-		if os.Getenv("XDG_CONFIG_HOME") != "" {
-			return filepath.Join(os.Getenv("XDG_CONFIG_HOME"), configDirName)
-		}
-		return filepath.Join(os.Getenv("HOME"), "/.config", configDirName)
+func ConfigDir() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
 	}
+
+	return filepath.Join(configDir, "gitsu-go"), nil
 }
 
-func ConfigPath() string {
-	return filepath.Join(ConfigDir(), ConfigFile)
+func ConfigPath() (string, error) {
+	configDir, err := ConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(configDir, ConfigFile), nil
 }
 
 func IsExist(path string) bool {
@@ -41,13 +38,22 @@ func IsExist(path string) bool {
 }
 
 func CreateConfig(config Config) error {
-	if !IsExist(ConfigDir()) {
-		if err := os.Mkdir(ConfigDir(), 0744); err != nil {
+	configDir, err := ConfigDir()
+	if err != nil {
+		return err
+	}
+	if !IsExist(configDir) {
+		if err := os.Mkdir(configDir, 0744); err != nil {
 			return err
 		}
 	}
 
-	file, err := os.Create(ConfigPath())
+	configPath, err := ConfigPath()
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(configPath)
 	if err != nil {
 		return err
 	}
@@ -68,7 +74,12 @@ func CreateConfig(config Config) error {
 func ReadConfig() (Config, error) {
 	var config Config
 
-	data, err := ioutil.ReadFile(ConfigPath())
+	configPath, err := ConfigPath()
+	if err != nil {
+		return config, err
+	}
+
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return config, err
 	}
