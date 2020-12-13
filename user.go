@@ -9,12 +9,13 @@ import (
 type User struct {
 	Name  string `json:"Name"`
 	Email string `json:"Email"`
+	Alias string `json:"Alias`
 }
 
 func UsersToString(users []User) []string {
 	us := make([]string, len(users))
 	for i, user := range users {
-		us[i] = user.Name + " <" + user.Email + ">"
+		us[i] = user.Name + " <" + user.Email + ">" + " Alias: " + user.Alias
 	}
 
 	return us
@@ -38,14 +39,18 @@ func ListUser() ([]User, error) {
 	return config.Users, nil
 }
 
-func CreateUser(name, email string) error {
+func CreateUser(name, email, alias string) error {
 	configPath, err := ConfigPath()
 	if err != nil {
 		return err
 	}
 
+	if alias == "" {
+		alias = name
+	}
+
 	if !IsExist(configPath) {
-		if err := CreateConfig(Config{Users: []User{User{Name: name, Email: email}}}); err != nil {
+		if err := CreateConfig(Config{Users: []User{User{Name: name, Email: email, Alias: alias}}}); err != nil {
 			return err
 		}
 		return nil
@@ -57,9 +62,9 @@ func CreateUser(name, email string) error {
 	}
 
 	if config.Users == nil {
-		config.Users = []User{User{Name: name, Email: email}}
+		config.Users = []User{User{Name: name, Email: email, Alias: alias}}
 	} else {
-		config.Users = append(config.Users, User{Name: name, Email: email})
+		config.Users = append(config.Users, User{Name: name, Email: email, Alias: alias})
 	}
 
 	if err := CreateConfig(config); err != nil {
@@ -82,6 +87,36 @@ func RemoveUser(idx int, users []User) error {
 	}
 
 	return nil
+}
+
+func ModifyUser(idx int, users []User, modifiedUser User) error {
+	config, err := ReadConfig()
+	
+	users = config.Users
+
+	if err != nil {
+		return err
+	}
+
+	if modifiedUser.Name != "" {
+		users[idx].Name = modifiedUser.Name
+	}
+
+	if modifiedUser.Email != "" {
+		users[idx].Email = modifiedUser.Email
+	}
+
+
+	if modifiedUser.Alias != "" {
+		users[idx].Alias = modifiedUser.Alias
+	}
+
+
+	if err := CreateConfig(Config{Users: users}); err != nil {
+		return err
+	}
+	return nil
+
 }
 
 func ValidateEmail(email string) error {
