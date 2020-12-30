@@ -36,14 +36,12 @@ func main() {
 	flag.Usage = usage
 	flag.Parse()
 
-	if len(os.Args) > 1{
-		alias := os.Args[1]
-		if alias != "" {
-			modifyUser(alias)
-		}
-	}	
+	alias := ""
+	if len(os.Args) > 1 {
+		alias = os.Args[1]
+	}
 
-	os.Exit(run())
+	os.Exit(run(alias))
 }
 
 const (
@@ -53,7 +51,15 @@ const (
 	mod = "Modify git user"
 )
 
-func run() int {
+func run(alias string) int {
+	if alias != "" {
+        if err := modifyUser(alias); err != nil {
+            fmt.Fprintf(os.Stderr, "Failed to modify user with given alias: %v\n", err)
+            return 1
+        }
+        return 0
+    }
+
 	action := promptui.Select{
 		Label: "Select action",
 		Items: []string{sel, add, del, mod},
