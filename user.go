@@ -7,8 +7,9 @@ import (
 )
 
 type User struct {
-	Name  string `json:"Name"`
-	Email string `json:"Email"`
+	Name     string `json:"Name"`
+	Email    string `json:"Email"`
+	GpgKeyID string `json:"GpgKeyId"`
 }
 
 func UsersToString(users []User) []string {
@@ -38,14 +39,16 @@ func ListUser() ([]User, error) {
 	return config.Users, nil
 }
 
-func CreateUser(name, email string) error {
+func CreateUser(name, email, gpgKeyID string) error {
 	configPath, err := ConfigPath()
 	if err != nil {
 		return err
 	}
 
+	user := User{Name: name, Email: email, GpgKeyID: gpgKeyID}
+
 	if !IsExist(configPath) {
-		if err := CreateConfig(Config{Users: []User{User{Name: name, Email: email}}}); err != nil {
+		if err := CreateConfig(Config{Users: []User{user}}); err != nil {
 			return err
 		}
 		return nil
@@ -57,9 +60,9 @@ func CreateUser(name, email string) error {
 	}
 
 	if config.Users == nil {
-		config.Users = []User{User{Name: name, Email: email}}
+		config.Users = []User{user}
 	} else {
-		config.Users = append(config.Users, User{Name: name, Email: email})
+		config.Users = append(config.Users, user)
 	}
 
 	if err := CreateConfig(config); err != nil {

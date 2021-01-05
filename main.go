@@ -15,6 +15,7 @@ func usage() {
 
 Flags:
   --global              Set user as global.
+  --gpg                 Prompt for a GPG key ID.
 
 Author:
   matsuyoshi30 <sfbgwm30@gmail.com>
@@ -23,7 +24,8 @@ Author:
 }
 
 var (
-	isGlobal = flag.Bool("global", false, "Set user as global")
+	isGlobal  = flag.Bool("global", false, "Set user as global")
+	setGpgKey = flag.Bool("gpg", false, "Prompt for a GPG key ID")
 
 	// these are set in build step
 	version = "unversioned"
@@ -113,6 +115,12 @@ func selectUser() error {
 	if err := cmdMail.Run(); err != nil {
 		return err
 	}
+	if users[selectedUserIndex].GpgKeyID != "" {
+		cmdGpgKey := exec.Command("git", "config", option, "user.signingkey", users[selectedUserIndex].GpgKeyID)
+		if err := cmdGpgKey.Run(); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -134,8 +142,18 @@ func addUser() error {
 	if err != nil {
 		return err
 	}
+	var resultKeyID string
+	if *setGpgKey {
+		keyIdPrompt := promptui.Prompt{
+			Label: "Input GPG key ID",
+		}
+		resultKeyID, err = keyIdPrompt.Run()
+		if err != nil {
+			return err
+		}
+	}
 
-	if err := CreateUser(resultName, resultEmail); err != nil {
+	if err := CreateUser(resultName, resultEmail, resultKeyID); err != nil {
 		return err
 	}
 
