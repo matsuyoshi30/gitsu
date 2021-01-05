@@ -93,31 +93,38 @@ func selectUser() error {
 		return nil
 	}
 
-	user := promptui.Select{
+	userPrompt := promptui.Select{
 		Label: "Select git user",
 		Items: UsersToString(users),
 	}
-	selectedUserIndex, _, err := user.Run()
+	selectedUserIndex, _, err := userPrompt.Run()
 	if err != nil {
 		return err
 	}
 
-	option := "--local"
+	user := users[selectedUserIndex]
+
+	scopeOpt := "--local"
 	if *isGlobal {
-		option = "--global"
+		scopeOpt = "--global"
 	}
 
-	cmdName := exec.Command("git", "config", option, "user.name", users[selectedUserIndex].Name)
+	cmdName := exec.Command("git", "config", scopeOpt, "user.name", user.Name)
 	if err := cmdName.Run(); err != nil {
 		return err
 	}
-	cmdMail := exec.Command("git", "config", option, "user.email", users[selectedUserIndex].Email)
+	cmdMail := exec.Command("git", "config", scopeOpt, "user.email", user.Email)
 	if err := cmdMail.Run(); err != nil {
 		return err
 	}
-	if users[selectedUserIndex].GpgKeyID != "" {
-		cmdGpgKey := exec.Command("git", "config", option, "user.signingkey", users[selectedUserIndex].GpgKeyID)
-		if err := cmdGpgKey.Run(); err != nil {
+
+	cmdGpgKey := exec.Command("git", "config", scopeOpt, "user.signingkey", user.GpgKeyID)
+	if users[selectedUserIndex].GpgKeyID == "" {
+		cmdGpgKey = exec.Command("git", "config", scopeOpt, "--unset", "user.signingkey")
+	}
+	if err := cmdGpgKey.Run(); err != nil {
+		// git exits with code 5 when unsetting a non-existent property
+		if exitErr, ok := err.(*exec.ExitError); !ok || exitErr.ExitCode() != 5 {
 			return err
 		}
 	}
