@@ -29,6 +29,7 @@ Usage:
 
 Flags:
   --global              Set user as global.
+  --gpg                 Prompt for a GPG key ID.
 ```
 
 ## LICENSE
