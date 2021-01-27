@@ -15,6 +15,7 @@ func usage() {
 
 Flags:
   --global              Set user as global.
+  --gpg                 Prompt for a GPG key ID.
 
 Author:
   matsuyoshi30 <sfbgwm30@gmail.com>
@@ -23,7 +24,8 @@ Author:
 }
 
 var (
-	isGlobal = flag.Bool("global", false, "Set user as global")
+	isGlobal  = flag.Bool("global", false, "Set user as global")
+	setGpgKey = flag.Bool("gpg", false, "Prompt for a GPG key ID")
 
 	// these are set in build step
 	version = "unversioned"
@@ -91,27 +93,40 @@ func selectUser() error {
 		return nil
 	}
 
-	user := promptui.Select{
+	userPrompt := promptui.Select{
 		Label: "Select git user",
 		Items: UsersToString(users),
 	}
-	selectedUserIndex, _, err := user.Run()
+	selectedUserIndex, _, err := userPrompt.Run()
 	if err != nil {
 		return err
 	}
 
-	option := "--local"
+	user := users[selectedUserIndex]
+
+	scopeOpt := "--local"
 	if *isGlobal {
-		option = "--global"
+		scopeOpt = "--global"
 	}
 
-	cmdName := exec.Command("git", "config", option, "user.name", users[selectedUserIndex].Name)
+	cmdName := exec.Command("git", "config", scopeOpt, "user.name", user.Name)
 	if err := cmdName.Run(); err != nil {
 		return err
 	}
-	cmdMail := exec.Command("git", "config", option, "user.email", users[selectedUserIndex].Email)
+	cmdMail := exec.Command("git", "config", scopeOpt, "user.email", user.Email)
 	if err := cmdMail.Run(); err != nil {
 		return err
+	}
+
+	cmdGpgKey := exec.Command("git", "config", scopeOpt, "user.signingkey", user.GpgKeyID)
+	if users[selectedUserIndex].GpgKeyID == "" {
+		cmdGpgKey = exec.Command("git", "config", scopeOpt, "--unset", "user.signingkey")
+	}
+	if err := cmdGpgKey.Run(); err != nil {
+		// git exits with code 5 when unsetting a non-existent property
+		if exitErr, ok := err.(*exec.ExitError); !ok || exitErr.ExitCode() != 5 {
+			return err
+		}
 	}
 
 	return nil
@@ -134,8 +149,18 @@ func addUser() error {
 	if err != nil {
 		return err
 	}
+	var resultKeyID string
+	if *setGpgKey {
+		keyIdPrompt := promptui.Prompt{
+			Label: "Input GPG key ID",
+		}
+		resultKeyID, err = keyIdPrompt.Run()
+		if err != nil {
+			return err
+		}
+	}
 
-	if err := CreateUser(resultName, resultEmail); err != nil {
+	if err := CreateUser(resultName, resultEmail, resultKeyID); err != nil {
 		return err
 	}
 
