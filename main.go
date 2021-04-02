@@ -1,10 +1,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 
 	"github.com/manifoldco/promptui"
 )
@@ -24,6 +24,7 @@ Author:
 }
 
 var (
+	alias     = ""
 	isGlobal  = flag.Bool("global", false, "Set user as global")
 	setGpgKey = flag.Bool("gpg", false, "Prompt for a GPG key ID")
 
@@ -37,6 +38,10 @@ func main() {
 	flag.Usage = usage
 	flag.Parse()
 
+	if len(os.Args) > 1 {
+		alias = os.Args[1]
+	}
+
 	os.Exit(run())
 }
 
@@ -48,6 +53,15 @@ const (
 )
 
 func run() int {
+	if alias != "" {
+		if err := selectSingleUser(alias); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to select user: %v\n", err)
+			return 1
+		}
+
+		return 0
+	}
+
 	action := promptui.Select{
 		Label:  "Select action",
 		Items:  []string{sel, add, del},
@@ -111,32 +125,38 @@ func selectUser() error {
 
 	user := users[selectedUserIndex]
 
-	scopeOpt := "--local"
+	scope := Local
 	if *isGlobal {
-		scopeOpt = "--global"
+		scope = Global
 	}
 
-	cmdName := exec.Command("git", "config", scopeOpt, "user.name", user.Name)
-	if err := cmdName.Run(); err != nil {
-		return err
-	}
-	cmdMail := exec.Command("git", "config", scopeOpt, "user.email", user.Email)
-	if err := cmdMail.Run(); err != nil {
+	return SetGitConfig(user, scope, users, selectedUserIndex)
+}
+
+func selectSingleUser(alias string) error {
+	users, err := ListUser()
+	if err != nil {
 		return err
 	}
 
-	cmdGpgKey := exec.Command("git", "config", scopeOpt, "user.signingkey", user.GpgKeyID)
-	if users[selectedUserIndex].GpgKeyID == "" {
-		cmdGpgKey = exec.Command("git", "config", scopeOpt, "--unset", "user.signingkey")
+	if len(users) == 0 {
+		fmt.Println("No users")
+		return nil
 	}
-	if err := cmdGpgKey.Run(); err != nil {
-		// git exits with code 5 when unsetting a non-existent property
-		if exitErr, ok := err.(*exec.ExitError); !ok || exitErr.ExitCode() != 5 {
-			return err
+
+	scope := Local
+	if *isGlobal {
+		scope = Global
+	}
+
+	for idx, user := range users {
+		if user.Alias == alias {
+			return SetGitConfig(user, scope, users, idx)
 		}
 	}
 
-	return nil
+	msg := fmt.Sprintf("No user with alias [%s]", alias)
+	return errors.New(msg)
 }
 
 func addUser() error {
@@ -167,7 +187,15 @@ func addUser() error {
 		}
 	}
 
-	if err := CreateUser(resultName, resultEmail, resultKeyID); err != nil {
+	alias := promptui.Prompt{
+		Label: "Input git user alias, leave empty for no alias",
+	}
+	resultAlias, err := alias.Run()
+	if err != nil {
+		return err
+	}
+
+	if err := CreateUser(resultName, resultEmail, resultKeyID, resultAlias); err != nil {
 		return err
 	}
 
@@ -231,7 +259,7 @@ func modifyUser() error {
 
 	email := promptui.Prompt{
 		Label:    "Input git email address, leave empty for no change",
-		Validate: ValidateEmail,
+		Validate: ValidateModifiedEmail,
 	}
 	newEmail, err := email.Run()
 	if err != nil {
@@ -249,9 +277,18 @@ func modifyUser() error {
 		}
 	}
 
+	alias := promptui.Prompt{
+		Label: "Input git user alias, leave empty for no alias",
+	}
+	newAlias, err := alias.Run()
+	if err != nil {
+		return err
+	}
+
 	newUser := User{
 		Name:     newName,
 		Email:    newEmail,
+		Alias:    newAlias,
 		GpgKeyID: newKeyID,
 	}
 
