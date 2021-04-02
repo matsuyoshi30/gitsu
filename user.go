@@ -93,6 +93,27 @@ func RemoveUser(idx int, users []User) error {
 	return nil
 }
 
+func ModifyUser(idx int, newUser User) error {
+	config, err := ReadConfig()
+	if err != nil {
+		return err
+	}
+
+	if newUser.Name != "" {
+		config.Users[idx].Name = newUser.Name
+	}
+
+	if newUser.Email != "" {
+		config.Users[idx].Email = newUser.Email
+	}
+
+	if newUser.GpgKeyID != "" {
+		config.Users[idx].GpgKeyID = newUser.GpgKeyID
+	}
+
+	return CreateConfig(config)
+}
+
 func ValidateEmail(email string) error {
 	if !govalidator.IsExistingEmail(email) {
 		return errors.New("Invalid email address")
