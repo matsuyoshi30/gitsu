@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/asaskevich/govalidator"
 )
@@ -15,7 +16,7 @@ type User struct {
 func UsersToString(users []User) []string {
 	us := make([]string, len(users))
 	for i, user := range users {
-		us[i] = user.Name + " <" + user.Email + ">"
+		us[i] = fmt.Sprintf("%s <%s>", user.Name, user.Email)
 	}
 
 	return us
@@ -62,6 +63,11 @@ func CreateUser(name, email, gpgKeyID string) error {
 	if config.Users == nil {
 		config.Users = []User{user}
 	} else {
+		err := CheckUser(user, config)
+		if err != nil {
+			return err
+		}
+
 		config.Users = append(config.Users, user)
 	}
 
@@ -90,6 +96,17 @@ func RemoveUser(idx int, users []User) error {
 func ValidateEmail(email string) error {
 	if !govalidator.IsExistingEmail(email) {
 		return errors.New("Invalid email address")
+	}
+
+	return nil
+}
+
+func CheckUser(newUser User, config Config) error {
+	for _, user := range config.Users {
+		if user.Email == newUser.Email && user.Name == newUser.Name {
+			msg := fmt.Sprintf("User %s <%s> already exists", user.Name, user.Email)
+			return errors.New(msg)
+		}
 	}
 
 	return nil
