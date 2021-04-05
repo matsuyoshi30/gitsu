@@ -48,8 +48,9 @@ const (
 
 func run() int {
 	action := promptui.Select{
-		Label: "Select action",
-		Items: []string{sel, add, del},
+		Label:  "Select action",
+		Items:  []string{sel, add, del},
+		Stdout: &bellSkipper{},
 	}
 
 	_, actionType, err := action.Run()
