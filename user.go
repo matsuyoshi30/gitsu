@@ -10,13 +10,19 @@ import (
 type User struct {
 	Name     string `json:"Name"`
 	Email    string `json:"Email"`
+	Alias    string `json:"Alias"`
 	GpgKeyID string `json:"GpgKeyId"`
 }
 
 func UsersToString(users []User) []string {
 	us := make([]string, len(users))
 	for i, user := range users {
-		us[i] = fmt.Sprintf("%s <%s>", user.Name, user.Email)
+		alias := ""
+		if user.Alias != "" {
+			alias = fmt.Sprintf("[%s] ", user.Alias)
+		}
+
+		us[i] = fmt.Sprintf("%s%s <%s>", alias, user.Name, user.Email)
 	}
 
 	return us
@@ -40,13 +46,18 @@ func ListUser() ([]User, error) {
 	return config.Users, nil
 }
 
-func CreateUser(name, email, gpgKeyID string) error {
+func CreateUser(name, email, gpgKeyID, alias string) error {
 	configPath, err := ConfigPath()
 	if err != nil {
 		return err
 	}
 
-	user := User{Name: name, Email: email, GpgKeyID: gpgKeyID}
+	user := User{
+		Name:     name,
+		Email:    email,
+		GpgKeyID: gpgKeyID,
+		Alias:    alias,
+	}
 
 	if !IsExist(configPath) {
 		if err := CreateConfig(Config{Users: []User{user}}); err != nil {
@@ -68,14 +79,15 @@ func CreateUser(name, email, gpgKeyID string) error {
 			return err
 		}
 
+		err = CheckAlias(user.Alias, config.Users)
+		if err != nil {
+			return err
+		}
+
 		config.Users = append(config.Users, user)
 	}
 
-	if err := CreateConfig(config); err != nil {
-		return err
-	}
-
-	return nil
+	return CreateConfig(config)
 }
 
 func RemoveUser(idx int, users []User) error {
@@ -86,8 +98,56 @@ func RemoveUser(idx int, users []User) error {
 		newUsers = append(users[:idx], users[idx+1:]...)
 	}
 
-	if err := CreateConfig(Config{Users: newUsers}); err != nil {
+	return CreateConfig(Config{Users: newUsers})
+}
+
+func ModifyUser(idx int, newUser User) error {
+	config, err := ReadConfig()
+	if err != nil {
 		return err
+	}
+
+	if newUser.Name != "" {
+		config.Users[idx].Name = newUser.Name
+	}
+
+	if newUser.Email != "" {
+		config.Users[idx].Email = newUser.Email
+	}
+
+	if newUser.GpgKeyID != "" {
+		config.Users[idx].GpgKeyID = newUser.GpgKeyID
+	}
+
+	if newUser.Alias != "" {
+		err := CheckAlias(newUser.Alias, config.Users)
+		if err != nil {
+			return err
+		}
+
+		config.Users[idx].Alias = newUser.Alias
+	}
+
+	return CreateConfig(config)
+}
+
+func CheckUser(newUser User, config Config) error {
+	for _, user := range config.Users {
+		if user.Email == newUser.Email && user.Name == newUser.Name {
+			msg := fmt.Sprintf("User %s <%s> already exists", user.Name, user.Email)
+			return errors.New(msg)
+		}
+	}
+
+	return nil
+}
+
+func CheckAlias(alias string, users []User) error {
+	for _, user := range users {
+		if user.Alias == alias {
+			msg := fmt.Sprintf("A user with alias [%s] already exists: %s <%s>", alias, user.Name, user.Email)
+			return errors.New(msg)
+		}
 	}
 
 	return nil
@@ -101,12 +161,13 @@ func ValidateEmail(email string) error {
 	return nil
 }
 
-func CheckUser(newUser User, config Config) error {
-	for _, user := range config.Users {
-		if user.Email == newUser.Email && user.Name == newUser.Name {
-			msg := fmt.Sprintf("User %s <%s> already exists", user.Name, user.Email)
-			return errors.New(msg)
-		}
+func ValidateModifiedEmail(email string) error {
+	if email == "" {
+		return nil
+	}
+
+	if !govalidator.IsExistingEmail(email) {
+		return errors.New("Invalid email address")
 	}
 
 	return nil
