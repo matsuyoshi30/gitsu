@@ -79,9 +79,11 @@ func CreateUser(name, email, gpgKeyID, alias string) error {
 			return err
 		}
 
-		err = CheckAlias(user.Alias, config.Users)
-		if err != nil {
-			return err
+		if user.Alias != "" {
+			err = CheckAlias(user.Alias, config.Users)
+			if err != nil {
+				return err
+			}
 		}
 
 		config.Users = append(config.Users, user)
