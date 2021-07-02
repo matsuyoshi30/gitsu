@@ -119,15 +119,12 @@ func ModifyUser(idx int, newUser User) error {
 		config.Users[idx].GpgKeyID = newUser.GpgKeyID
 	}
 
-	if newUser.Alias != "" {
-		err := CheckAlias(newUser.Alias, config.Users)
-		if err != nil {
-			return err
-		}
-
-		config.Users[idx].Alias = newUser.Alias
+	err = CheckAlias(newUser.Alias, config.Users)
+	if err != nil {
+		return err
 	}
 
+	config.Users[idx].Alias = newUser.Alias
 	return CreateConfig(config)
 }
 
@@ -143,6 +140,10 @@ func CheckUser(newUser User, config Config) error {
 }
 
 func CheckAlias(alias string, users []User) error {
+	if alias == "" {
+		return nil
+	}
+
 	for _, user := range users {
 		if user.Alias == alias {
 			msg := fmt.Sprintf("A user with alias [%s] already exists: %s <%s>", alias, user.Name, user.Email)
