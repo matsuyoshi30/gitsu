@@ -1,6 +1,12 @@
 package main
 
-import "os/exec"
+import (
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+)
 
 func SetGitConfig(user User, scope Scope, users []User, selectedUserIndex int) error {
 	cmdName := exec.Command("git", "config", scope.String(), "user.name", user.Name)
@@ -22,6 +28,26 @@ func SetGitConfig(user User, scope Scope, users []User, selectedUserIndex int) e
 		if exitErr, ok := err.(*exec.ExitError); !ok || exitErr.ExitCode() != 5 {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func IsUnderGitDir() error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(filepath.Join(cwd, ".git")); errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("Need to be under a git project directory to run git commands")
+	} else if err != nil {
+		return err
+	}
+
+	cmdRevParse := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	if err := cmdRevParse.Run(); err != nil {
+		return err
 	}
 
 	return nil
