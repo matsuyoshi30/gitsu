@@ -76,6 +76,11 @@ func run() int {
 
 	switch actionType {
 	case sel:
+		if err := IsUnderGitDir(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to detect git project: %v\n", err)
+			return 1
+		}
+
 		if err := selectUser(); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to select user: %v\n", err)
 			return 1
