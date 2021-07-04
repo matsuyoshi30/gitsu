@@ -40,7 +40,7 @@ func IsUnderGitDir() error {
 	}
 
 	if _, err := os.Stat(filepath.Join(cwd, ".git")); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("Need to be under a git project directory to run git commands")
+		return fmt.Errorf("you need to be in a git project directory to use gitsu")
 	} else if err != nil {
 		return err
 	}
