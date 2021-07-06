@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/matsuyoshi30/gitsu/internal/constants"
 	"github.com/matsuyoshi30/gitsu/internal/models"
@@ -127,6 +128,7 @@ func (c *Config) AddUser(user *models.User) error {
 		return err
 	}
 
+	user.AddedAt = time.Now()
 	c.Users = append(c.Users, *user)
 	return nil
 }
