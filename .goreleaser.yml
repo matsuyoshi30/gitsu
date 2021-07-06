@@ -25,6 +25,16 @@ archives:
 release:
   prerelease: auto
 
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - Merge pull request
+      - Merge branch
+      - go mod tidy
+
 brews:
   - tap:
       owner: matsuyoshi30
