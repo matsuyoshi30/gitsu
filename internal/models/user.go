@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -18,7 +19,6 @@ type User struct {
 	Email      string    `json:"email"`
 	Alias      string    `json:"alias"`
 	GpgKeyID   string    `json:"gpg_key_id"`
-	Default    bool      `json:"default"`
 	AddedAt    time.Time `json:"added_at"`
 	ModifiedAt time.Time `json:"modified_at"`
 }
@@ -61,6 +61,14 @@ func (u *User) Modify(name, email, alias, gpgKeyID string) {
 	}
 }
 
+// Format formats user profile data as a string
+func (u *User) Format(padding int) string {
+	if u.Alias != "" {
+		return fmt.Sprintf("%-*s %s <%s>", padding, fmt.Sprintf("[%s]", u.Alias), u.Name, u.Email)
+	}
+	return fmt.Sprintf("%-*s %s <%s>", padding, "", u.Name, u.Email)
+}
+
 // ValidateEmail validates the provided email address. If is was modified this function also accepts empty addresses
 // (= no change)
 func ValidateEmail(email string, modified bool) error {
@@ -71,6 +79,5 @@ func ValidateEmail(email string, modified bool) error {
 	if !govalidator.IsExistingEmail(email) {
 		return ErrInvalidEmail
 	}
-
 	return nil
 }

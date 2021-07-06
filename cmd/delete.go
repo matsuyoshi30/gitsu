@@ -26,7 +26,7 @@ func DeleteCommand() *cli.Command {
 				return nil
 			}
 
-			index, _, err := prompts.Selection("Select git user", list)
+			index, _, err := prompts.SelectionCustom("Select git user", list)
 			if err != nil {
 				return err
 			}

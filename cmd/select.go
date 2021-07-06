@@ -35,7 +35,7 @@ func SelectCommand() *cli.Command {
 				return nil
 			}
 
-			index, _, err := prompts.Selection("Select git user", list)
+			index, _, err := prompts.SelectionCustom("Select git user", list)
 			if err != nil {
 				return err
 			}
@@ -50,7 +50,18 @@ func SelectCommand() *cli.Command {
 				scope = models.Global
 			}
 
-			return git.SetConfig(user, scope)
+			err = git.IsInsideWorktree(scope)
+			if err != nil {
+				return err
+			}
+
+			err = git.SetConfig(user, scope)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("Setting profile %s", user.Format(0))
+			return nil
 		},
 	}
 }
