@@ -1,4 +1,3 @@
-// Package cmd provides cli commands
 package cmd
 
 import (
@@ -17,11 +16,12 @@ func Execute() error {
 			DeleteCommand(),
 			ModifyCommand(),
 			SelectCommand(),
+			ResetCommand(),
 			InitCommand(),
 			AddCommand(),
 		},
 		Action: func(c *cli.Context) error {
-			action, _, err := prompts.Selection(
+			action, _, err := prompts.SelectionCustom(
 				"Select action",
 				[]string{
 					"Select user",

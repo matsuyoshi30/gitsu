@@ -1,4 +1,3 @@
-// Package config provides functions to create, modify and save config values
 package config
 
 import (
@@ -145,8 +144,13 @@ func (c *Config) ModifyUser(index int, modifiedUser *models.User) error {
 		modifiedUser.Alias,
 		modifiedUser.GpgKeyID,
 	)
-	c.Users[index] = user
 
+	err := c.isValidUser(&user)
+	if err != nil {
+		return err
+	}
+
+	c.Users[index] = user
 	return nil
 }
 
@@ -174,7 +178,7 @@ func (c *Config) SelectUser(index int) (*models.User, error) {
 // SelectDefaultUser returns the default user or nil if there is no default user
 func (c *Config) SelectDefaultUser() (*models.User, error) {
 	for _, user := range c.Users {
-		if user.Default {
+		if user.Alias == constants.DefaultAlias {
 			return &user, nil
 		}
 	}
@@ -193,15 +197,22 @@ func (c *Config) SelectUserByAlias(alias string) (*models.User, error) {
 
 // UserList returns a list (slice) of formatted user data
 func (c *Config) UserList() []string {
+	var padding int = 0
 	var list []string
 	for _, user := range c.Users {
-		if user.Alias != "" {
-			list = append(list, fmt.Sprintf("[%s] %s <%s>", user.Alias, user.Name, user.Email))
-		} else {
-			list = append(list, fmt.Sprintf("%s <%s>", user.Name, user.Email))
+		if len(user.Alias) > padding {
+			padding = len(user.Alias) + 2
 		}
 	}
+	for _, user := range c.Users {
+		list = append(list, user.Format(padding))
+	}
 	return list
+}
+
+// Reset resets the saved user profiles
+func (c *Config) Reset() {
+	c.Users = []models.User{}
 }
 
 // isValidUser returns if the provided user is valid
@@ -215,14 +226,6 @@ func (c *Config) isValidUser(newUser *models.User) error {
 			return fmt.Errorf(
 				"A user with alias [%s] already exists: %s <%s>",
 				newUser.Alias,
-				newUser.Name,
-				newUser.Email,
-			)
-		}
-
-		if user.Default && newUser.Default {
-			return fmt.Errorf(
-				"A default user already exists: %s <%s>",
 				newUser.Name,
 				newUser.Email,
 			)
