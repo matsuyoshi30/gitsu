@@ -121,6 +121,24 @@ func Write(c *Config) error {
 	return err
 }
 
+// CreateEmptyConfigIfNeeded creates a new empty config file if it does not exits (This is the case when the user uses
+// the tool for the first time)
+func CreateEmptyConfigIfNeeded() (*Config, error) {
+	exists, err := Exists()
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return Read()
+	}
+
+	c := &Config{
+		Version: "",
+		Users:   []models.User{},
+	}
+	return c, Write(c)
+}
+
 // AddUser adds a new user to the config or returns an error if new user is invalid
 func (c *Config) AddUser(user *models.User) error {
 	err := c.isValidUser(user)

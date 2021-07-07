@@ -51,7 +51,7 @@ func AddCommand() *cli.Command {
 			}
 
 			user := models.NewUser(name, email, alias, keyID)
-			cfg, err := config.Read()
+			cfg, err := config.CreateEmptyConfigIfNeeded()
 			if err != nil {
 				return err
 			}
