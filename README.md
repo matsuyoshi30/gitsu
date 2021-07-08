@@ -23,13 +23,18 @@ go get github.com/matsuyoshi30/gitsu
 ## Usage
 
 ```bash
-Usage: 
-  git su [flags] # via Homebrew 
-  gitsu [flags]  # via Go
+USAGE:
+   git su [global options] command [command options] [arguments...] # via Homebrew
+   gitsu [global options] command [command options] [arguments...]  # via go get
 
-Flags:
-  --global              Set user as global.
-  --gpg                 Prompt for a GPG key ID.
+COMMANDS:
+   delete, d  Delete existing user
+   modify, m  Modify existing user
+   select, s  Select existing user
+   reset, r   Remove all saved user profiles
+   init, i    Initialize user config by providing an alias
+   add, a     Add new user
+   help, h    Shows a list of commands or help for one command
 ```
 
 ## LICENSE
