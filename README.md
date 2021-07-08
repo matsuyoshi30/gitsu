@@ -20,6 +20,10 @@ brew install matsuyoshi30/gitsu/gitsu
 go get github.com/matsuyoshi30/gitsu
 ```
 
+#### Requirements
+
+- Go 1.16 ~
+
 ## Usage
 
 ```bash
