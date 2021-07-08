@@ -1,19 +1,19 @@
-package main
+package fixes
 
 import "os"
 
-// bellSkipper implements an io.WriteCloser that skips the terminal bell
+// BellSkipper implements an io.WriteCloser that skips the terminal bell
 // character (ASCII code 7), and writes the rest to os.Stderr. It is used to
 // replace readline.Stdout, that is the package used by promptui to display the
 // prompts.
 //
 // This is a workaround for the bell issue documented in
 // https://github.com/manifoldco/promptui/issues/49.
-type bellSkipper struct{}
+type BellSkipper struct{}
 
 // Write implements an io.WriterCloser over os.Stderr, but it skips the terminal
 // bell character.
-func (bs *bellSkipper) Write(b []byte) (int, error) {
+func (bs *BellSkipper) Write(b []byte) (int, error) {
 	const charBell = 7 // c.f. readline.CharBell
 	if len(b) == 1 && b[0] == charBell {
 		return 0, nil
@@ -22,6 +22,6 @@ func (bs *bellSkipper) Write(b []byte) (int, error) {
 }
 
 // Close implements an io.WriterCloser over os.Stderr.
-func (bs *bellSkipper) Close() error {
+func (bs *BellSkipper) Close() error {
 	return os.Stderr.Close()
 }
