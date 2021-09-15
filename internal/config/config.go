@@ -197,12 +197,11 @@ func (c *Config) SelectUser(index int) (*models.User, error) {
 
 // SelectDefaultUser returns the default user or nil if there is no default user
 func (c *Config) SelectDefaultUser() (*models.User, error) {
-	for _, user := range c.Users {
-		if user.Alias == constants.DefaultAlias {
-			return &user, nil
-		}
+	user, err := c.SelectUserByAlias("default")
+	if err != nil {
+		return nil, ErrNoDefaultUser
 	}
-	return nil, ErrNoDefaultUser
+	return user, nil
 }
 
 // SelectUserByAlias returns a user by alias or nil if there is no such user
