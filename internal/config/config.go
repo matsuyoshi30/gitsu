@@ -141,7 +141,7 @@ func CreateEmptyConfigIfNeeded() (*Config, error) {
 
 // AddUser adds a new user to the config or returns an error if new user is invalid
 func (c *Config) AddUser(user *models.User) error {
-	err := c.isValidUser(user)
+	err := c.isValidUser(user, -1)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (c *Config) ModifyUser(index int, modifiedUser *models.User) error {
 		modifiedUser.GpgKeyID,
 	)
 
-	err := c.isValidUser(&user)
+	err := c.isValidUser(&user, index)
 	if err != nil {
 		return err
 	}
@@ -235,12 +235,19 @@ func (c *Config) Reset() {
 }
 
 // isValidUser returns if the provided user is valid
-func (c *Config) isValidUser(newUser *models.User) error {
-	for _, user := range c.Users {
+func (c *Config) isValidUser(newUser *models.User, index int) error {
+	for i, user := range c.Users {
+		// Looking at the same profile, skip
+		if i == index {
+			continue
+		}
+
+		// Same name and email already exist
 		if user.Name == newUser.Name && user.Email == newUser.Email {
 			return fmt.Errorf("User %s <%s> already exists", user.Name, user.Email)
 		}
 
+		// Alias already exists
 		if newUser.Alias != "" && user.Alias == newUser.Alias {
 			return fmt.Errorf(
 				"A user with alias [%s] already exists: %s <%s>",
